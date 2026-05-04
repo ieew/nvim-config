@@ -9,6 +9,7 @@
 2. 将 `init.lua` 放入 `~/.config/nvim/`
 3. 在 `shell` 执行下列指令
     ```shell
+    pacman -S yarn
     npm install -g pyright
     npm install -g yaml-language-server
     npm install -g bash-language-server
