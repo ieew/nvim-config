@@ -29,8 +29,8 @@ Plug('rafamadriz/friendly-snippets')
 Plug('iamcco/markdown-preview.nvim', { ['do'] = 'cd app && yarn install' })
 Plug('dhruvasagar/vim-table-mode')
 Plug('preservim/vim-markdown')
-
-
+Plug('lewis6991/gitsigns.nvim')   -- 行内状态显示、块导航、历史对比[citation:5]
+Plug('tpope/vim-fugitive')        -- Git 命令台，强大的 :Git 命令
 vim.call('plug#end')
 
 vim.g.mapleader = ' '
@@ -296,6 +296,53 @@ cmp.setup.filetype({ "yaml", "yml" }, {
     { name = 'buffer', keyword_length = 3 },
     { name = 'path' },
   }),
+})
+
+
+-- Git 行内状态与操作配置
+require('gitsigns').setup({
+  signs = {
+    add          = { text = '│' },
+    change       = { text = '│' },
+    delete       = { text = '_' },
+    topdelete    = { text = '‾' },
+    changedelete = { text = '~' },
+  },
+  -- 行号栏显示改动标记
+  numhl = true,
+  -- 当前行自动显示 blame 信息
+  current_line_blame = true,
+  -- 快捷键推荐
+  on_attach = function(bufnr)
+    local gs = package.loaded.gitsigns
+
+    local function map(mode, l, r, opts)
+      opts = opts or {}
+      opts.buffer = bufnr
+      vim.keymap.set(mode, l, r, opts)
+    end
+
+    -- 在修改块之间跳转
+    map('n', ']c', function()
+      if vim.wo.diff then return ']c' end
+      vim.schedule(function() gs.next_hunk() end)
+      return '<Ignore>'
+    end, { expr = true })
+
+    map('n', '[c', function()
+      if vim.wo.diff then return '[c' end
+      vim.schedule(function() gs.prev_hunk() end)
+      return '<Ignore>'
+    end, { expr = true })
+
+    -- 查看修改详情与操作
+    map('n', '<leader>hs', gs.stage_hunk, { desc = '暂存当前块' })
+    map('n', '<leader>hr', gs.reset_hunk, { desc = '撤销当前块修改' })
+    map('n', '<leader>hS', gs.stage_buffer, { desc = '暂存整个文件' })
+    map('n', '<leader>hu', gs.undo_stage_hunk, { desc = '取消暂存当前块' })
+    map('n', '<leader>hp', gs.preview_hunk, { desc = '预览修改块' })
+    map('n', '<leader>hb', function() gs.blame_line{ full = true } end, { desc = '查看完整行历史' })
+  end,
 })
 
 vim.cmd('silent! colorscheme seoul256')
