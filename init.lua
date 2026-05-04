@@ -43,13 +43,6 @@ vim.lsp.config.ruff = {
   settings = {}
 }
 
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "python",
-  callback = function()
-    vim.lsp.enable("ruff")
-  end,
-})
-
 local function get_venv_python()
   -- 获取当前文件的目录或项目根目录（可根据需要选一种）
   local cwd = vim.fn.getcwd()
