@@ -96,6 +96,30 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Rust LSP 配置
+vim.lsp.config.rust_analyzer = {
+  cmd = { "rust-analyzer" },
+  filetypes = { "rust" },
+  root_markers = { ".git", "Cargo.toml" },
+  -- 复用你已有的 capabilities（和 nvim-cmp 打通的关键）
+  capabilities = require('cmp_nvim_lsp').default_capabilities(),
+  settings = {
+    ["rust-analyzer"] = {
+        checkOnSave = true,
+        inlayHints = {
+            enable = true,
+        }
+    },
+  },
+}
+
+-- 自动启动 LSP（和你之前配置 Python、YAML 的模式一样）
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "rust",
+  callback = function()
+    pcall(function() vim.lsp.enable("rust_analyzer") end)
+  end,
+})
 
 -- 替换掉你原来 LspAttach 里的整个回调函数
 vim.api.nvim_create_autocmd("LspAttach", {
