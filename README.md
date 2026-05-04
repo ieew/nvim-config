@@ -7,6 +7,12 @@
     > sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
 2. 将 `init.lua` 放入 `~/.config/nvim/`
-3. 在 `nvim` 中执行 `PlugInstall` 安装插件或直接在 `shell` 执行 `nvim +PlugInstall`
+3. 在 `shell` 执行下列指令
+    ```shell
+    npm install -g pyright
+    npm install -g yaml-language-server
+    npm install -g bash-language-server
+    nvim +PlugInstall
+    ```
 4. 开始享受吧~
 
