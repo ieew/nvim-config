@@ -135,6 +135,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
       -- 自动触发（输入 ( 或 , 时）
       vim.api.nvim_create_autocmd("TextChangedI", {
         buffer = args.buf,
+        group = vim.api.nvim_create_augroup("LspSingnatureHelp" .. args.buf, { clear = true}),
         callback = function()
           -- 安全获取刚输入的字符
           local char = vim.v.event and vim.v.event.char or ""
@@ -166,9 +167,9 @@ vim.keymap.set({"i", "s"}, "<C-L>", function() luasnip.jump( 1) end, {silent = t
 vim.keymap.set({"i", "s"}, "<C-J>", function() luasnip.jump(-1) end, {silent = true})
 
 vim.keymap.set({"i", "s"}, "<C-E>", function()
-	if luasnip.choice_active() then
-		luasnip.change_choice(1)
-	end
+        if luasnip.choice_active() then
+                luasnip.change_choice(1)
+        end
 end, {silent = true})
 
 local has_lspkind, lspkind = pcall(require, 'lspkind')
@@ -326,13 +327,13 @@ require('gitsigns').setup({
     map('n', ']c', function()
       if vim.wo.diff then return ']c' end
       vim.schedule(function() gs.next_hunk() end)
-      return '<Ignore>'
+      return ''
     end, { expr = true })
 
     map('n', '[c', function()
       if vim.wo.diff then return '[c' end
       vim.schedule(function() gs.prev_hunk() end)
-      return '<Ignore>'
+      return ''
     end, { expr = true })
 
     -- 查看修改详情与操作
@@ -345,5 +346,55 @@ require('gitsigns').setup({
   end,
 })
 
-vim.cmd('silent! colorscheme seoul256')
 
+-- ========== 真正的 VS Code 风格 Home 键（双向切换）==========
+
+-- 计算当前行的行首缩进后第一个非空字符的列位置
+local function get_first_non_blank_col()
+  local line = vim.fn.getline('.')
+  local _, first_non_blank_start = line:find('%S')
+  -- 如果行是空的，就返回1（第一列）
+  return first_non_blank_start or 1
+end
+
+-- 智能 Home 键映射（普通/可视模式）
+vim.keymap.set({'n', 'v'}, '<Home>', function()
+  local first_non_blank = get_first_non_blank_col()
+  local current_col = vim.fn.col('.')
+  local line_num = vim.fn.line('.')
+
+  -- 核心判断逻辑：光标在哪？
+  if current_col == 1 and first_non_blank > 1 then
+    -- 情况A：光标已在绝对行首 -> 跳转到第一个非空字符
+    vim.api.nvim_win_set_cursor(0, {line_num, first_non_blank})
+  elseif current_col > 1 then
+    -- 情况B：光标在行中的其他位置 -> 跳转到绝对行首
+    vim.api.nvim_win_set_cursor(0, {line_num, 1})
+  elseif current_col == first_non_blank then
+    -- 情况C：光标恰好在第一个非空字符上 -> 跳转到绝对行首
+    vim.api.nvim_win_set_cursor(0, {line_num, 1})
+  end
+end, { desc = 'Toggle Home between first non-blank and column 1' })
+
+-- 插入模式 Home 键：用 <C-o> 在插入模式暂时执行普通模式命令
+vim.keymap.set('i', '<Home>', function()
+  local first_non_blank = get_first_non_blank_col()
+  local current_col = vim.fn.col('.')
+  local line_num = vim.fn.line('.')
+
+  local target_col
+  if current_col == 1 and first_non_blank > 1 then
+    target_col = first_non_blank
+  else
+    target_col = 1
+  end
+
+  -- 在插入模式下必须用 <C-o> 来移动光标
+  vim.cmd('normal! ' .. target_col .. '|')
+end, { desc = 'Toggle Home in Insert mode' })
+
+vim.api.nvim_create_autocmd("VimEnter", {
+    callback = function()
+        vim.cmd('silent! colorscheme seoul256')
+    end,
+})
